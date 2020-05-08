@@ -1,0 +1,40 @@
+---
+title: Quick visualization of research trends in r
+author: Jorik Bot
+date: '2020-05-08'
+slug: testpost
+categories:
+  - r, ggplot2, covid19
+tags:
+  - r, ggplot2, covid19
+---
+
+
+
+<p>This post is adapted from <a href="https://www.dsquintana.blog/how-to-visualise-research-trends-in-r/" class="uri">https://www.dsquintana.blog/how-to-visualise-research-trends-in-r/</a>. It contains a short script to show trends in certain keywords on Europe PMC. As an example I have taken the keyword ‘coronavirus’. First we load some packages:</p>
+<pre class="r"><code>library(&quot;europepmc&quot;)
+library(&quot;cowplot&quot;)
+library(&quot;tidyverse&quot;)</code></pre>
+<p>Then the magic:</p>
+<pre class="r"><code>#Query europe pmc database (includes pubmed)
+corona_trend &lt;- epmc_hits_trend(query = &quot;coronavirus&quot;, 
+                                period = 2002:2020)
+
+#Calculate proportion and make plot.
+corona_trend %&gt;%
+  mutate(proportion = query_hits/all_hits) %&gt;%
+  ggplot(aes(x= factor(year), 
+             y = proportion))+
+    geom_col(fill = &quot;#56B4E9&quot;,
+             width = 0.6,
+             alpha = 0.9)+
+    annotate(geom = &quot;rect&quot;, xmin = 0.5, xmax = 3.5, ymin = -Inf, ymax = Inf, fill = &quot;red&quot;, alpha = 0.3)+
+    annotate(geom = &quot;text&quot;, x = 2, y = 0.018, label = &quot;SARS&quot;, hjust = &quot;center&quot;)+
+    annotate(geom = &quot;text&quot;, x = 15.2, y = 0.018, label = &quot;COVID19&quot;, hjust = &quot;center&quot;)+
+    annotate(geom = &quot;segment&quot;, x = 16.5, y = 0.018, xend = 18.3, yend = 0.018, arrow = arrow(length = unit(2, &quot;mm&quot;))) +
+    scale_y_continuous(expand = c(0, 0))+
+    theme_minimal_hgrid(11)+
+    labs(x = &quot;Year&quot;,
+         y = &quot;Proportion of all published articles&quot;,
+         title = &quot;Hits for &#39;coronavirus&#39; on Europe PMC&quot;)</code></pre>
+<p><img src="/post/2020-05-08-testpost_files/figure-html/do%20the%20thing-1.png" width="672" /> Perhaps unsurprisingly, the COVID19 outbreak has caused a huge increase in articles mentioning coronavirus.</p>
