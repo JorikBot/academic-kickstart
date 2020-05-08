@@ -1,0 +1,120 @@
+---
+title: Infectious Disease in NL
+author: Jorik Bot
+date: '2020-05-08'
+slug: infectious-disease-in-nl
+categories:
+  - r
+  - ggplot2
+tags:
+  - r
+  - ggplot2
+subtitle: ''
+summary: ''
+authors: []
+lastmod: '2020-05-08T17:29:56+02:00'
+featured: no
+image:
+  caption: ''
+  focal_point: ''
+  preview_only: no
+projects: []
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      message = FALSE,
+                      warning = FALSE)
+```
+
+```{r library loading}
+library("tidyverse")
+library("ggpubr")
+library("ggsci")
+```
+
+
+```{r data import}
+death_data <- read_csv2(file = "cbs_doden.csv")
+disease_data <- read_csv2(file = "cbs_ziekten.csv")
+vac_data <- read_csv2(file = "cbs_vaccinatie.csv")
+```
+
+## Overview
+
+At the start of the 20th century about 3 in 1000 people died of an infection every year. Which disease was reponsible for this?
+
+```{r totaal}
+death_data %>%
+  ggplot(aes(perioden, totaal_infectie))+
+    geom_point()+
+    geom_line()+
+    scale_x_continuous(breaks = c(1920, 1940, 1960, 1980, 2000, 2020))+
+    theme_pubr()+
+    labs(x = "Year",
+         y = "Deaths per 100k caused by infectious diseases",
+         caption = "Source: CBS Statline")
+```
+
+## Tuberculosis
+
+Not the flu, but tuberculoses caused most of these deaths. Surprisingly, the majority of the decrease in amount of deaths by TBC occurred before the discovery of effective antiobitcs against it. This was achieved thru increasing living standards, and isolation of the infected people in sanitoria (horrible, look it up if you want!). Both world wars are clearly trendbreakers. A relapse in living standards immidiatly saw rising cases. 
+```{r tb absolute}
+death_data %>%
+  pivot_longer(cols = c("totaal_infectie", "tuberculose", "griep"), names_to = "doodsoorzaak", values_to = "aantal") %>%
+  filter(doodsoorzaak != "griep") %>%
+    ggplot(aes(perioden, aantal, color = doodsoorzaak))+
+      geom_point()+
+      geom_line()+
+      geom_vline(xintercept = 1946, linetype = "dashed")+
+      annotate(geom = "text", x = 1947, y = 310, label = "Antibiotic era", hjust = "left")+
+      #annotate(geom = "segment", x = 1947, y = 310, xend = 2020, yend = 310, arrow = arrow(length = unit(2, "mm"))) +
+      scale_x_continuous(breaks = c(1920, 1940, 1960, 1980, 2000, 2020))+
+      scale_y_continuous()+
+      scale_color_jco(labels = c("Total deaths", "TBC deaths"))+
+      theme_pubr()+
+      theme(legend.title = element_blank())+
+      labs(x = "Year",
+           y = "Deaths per 100k caused by infectious diseases",
+           caption = "Source: CBS Statline")
+```
+
+
+The amount of people dying from TBC decreased quickly in the first half of the 20th century. But without a cure TBC remained responsible for over 60% of all deaths from infectious diseases. The antibiotic streptomycin was discovered in 1944, with the first clinical trail running from 1946 to 1948. Finally there was a treatment for TBC. In the following decades more antibiotics were discovered, which further improved outcomes. Nowadays only ~2 people per million die of TBC in the netherlands. 
+```{r tb relative}
+death_data %>%
+  mutate(rel_tbc = tuberculose / totaal_infectie,
+         rel_griep = griep / totaal_infectie) %>%
+    ggplot(aes(perioden, rel_tbc))+
+      geom_point()+
+      geom_line()+
+      geom_vline(xintercept = c(1946, 1970), linetype = "dashed")+
+      annotate(geom = "text", x = 1947, y = 0.77, label = "streptomycin", hjust = "left")+
+      annotate(geom = "text", x = 1971, y = 0.77, label = "rifampicin", hjust = "left")+
+      scale_x_continuous(breaks = c(1920, 1940, 1960, 1980, 2000, 2020))+
+      scale_y_continuous(breaks = c(0.0, 0.25, 0.5, 0.75), labels = scales::percent)+
+      scale_color_jco()+
+      theme_pubr()+
+      labs(x = "Year",
+           y = "TBC percent of total deaths by infections",
+           caption = "Source: CBS Statline")
+```
+
+## What about the flu?
+
+We go over 100%, so CBS data is flawed? Or flu is excluded from total for some reason?
+
+```{r flu relative}
+death_data %>%
+  mutate(rel_tbc = tuberculose / totaal_infectie,
+         rel_griep = griep / totaal_infectie) %>%
+    ggplot(aes(perioden, rel_griep))+
+      geom_point()+
+      geom_line()+
+      scale_x_continuous(breaks = c(1920, 1940, 1960, 1980, 2000, 2020))+
+      scale_y_continuous(labels = scales::percent)+
+      scale_color_jco()+
+      theme_pubr()+
+      labs(x = "Year",
+           y = "Flu death percent of total deaths by infections",
+           caption = "Source: CBS Statline")
+```
