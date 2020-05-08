@@ -18,7 +18,7 @@ knitr::opts_chunk$set(message = FALSE,
                       warning = FALSE)
 ```
 
-This post is adapted from https://www.dsquintana.blog/how-to-visualise-research-trends-in-r/. It contains a short script  to show trends in certain keywords on Europe PMC. As an example I have taken the keyword 'coronavirus'. First we load some packages:
+This post is adapted from [Daniel Quintana's blog](https://www.dsquintana.blog/how-to-visualise-research-trends-in-r/). It contains a short script  to show trends in certain keywords on Europe PMC. As an example I have taken the keyword 'coronavirus'. First we load some packages:
 
 ```{r load packages}
 library("europepmc")
@@ -26,7 +26,7 @@ library("cowplot")
 library("tidyverse")
 ```
 
-Then we query the PMC database with the function epmc_hits_trend, and plot the results.
+Then we query the PMC database with the function `epmc_hits_trend()`, and plot the results.
 ```{r do the thing}
 #Query europe PMC database (includes pubmed)
 corona_trend <- epmc_hits_trend(query = "coronavirus", 

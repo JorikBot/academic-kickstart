@@ -15,11 +15,11 @@ tags:
 
 
 
-<p>This post is adapted from <a href="https://www.dsquintana.blog/how-to-visualise-research-trends-in-r/" class="uri">https://www.dsquintana.blog/how-to-visualise-research-trends-in-r/</a>. It contains a short script to show trends in certain keywords on Europe PMC. As an example I have taken the keyword ‘coronavirus’. First we load some packages:</p>
+<p>This post is adapted from <a href="https://www.dsquintana.blog/how-to-visualise-research-trends-in-r/">Daniel Quintana’s blog</a>. It contains a short script to show trends in certain keywords on Europe PMC. As an example I have taken the keyword ‘coronavirus’. First we load some packages:</p>
 <pre class="r"><code>library(&quot;europepmc&quot;)
 library(&quot;cowplot&quot;)
 library(&quot;tidyverse&quot;)</code></pre>
-<p>Then we query the PMC database with the function epmc_hits_trend, and plot the results.</p>
+<p>Then we query the PMC database with the function <code>epmc_hits_trend()</code>, and plot the results.</p>
 <pre class="r"><code>#Query europe PMC database (includes pubmed)
 corona_trend &lt;- epmc_hits_trend(query = &quot;coronavirus&quot;, 
                                 period = 2002:2020)
