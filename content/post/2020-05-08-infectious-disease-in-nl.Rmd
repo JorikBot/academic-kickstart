@@ -51,13 +51,14 @@ death_data %>%
     scale_x_continuous(breaks = c(1920, 1940, 1960, 1980, 2000, 2020))+
     theme_pubr()+
     labs(x = "Year",
-         y = "Deaths per 100k caused by infectious diseases",
-         caption = "Source: CBS Statline")
+         y = "Deaths per 100k inhabitants",
+         caption = "Source: CBS Statline",
+         title = "Deaths caused by infectious diseases")
 ```
 
 ## Tuberculosis
 
-Not the flu, but tuberculoses caused most of these deaths. Surprisingly, the majority of the decrease in amount of deaths by TBC occurred before the discovery of effective antiobitcs against it. This was achieved thru increasing living standards, and isolation of the infected people in sanitoria (horrible, look it up if you want!). Both world wars are clearly trendbreakers. A relapse in living standards immidiatly saw rising cases. 
+Not the flu, but tuberculoses caused most of these deaths. Surprisingly, the majority of the decrease in amount of deaths by TBC occurred before the discovery of effective antibiotics against it. This was achieved thru increasing living standards, and isolation of the infected people in sanitoria (horrible, look it up if you want). Both world wars are clearly trendbreakers. A relapse in living standards immediatly saw rising mortality. 
 ```{r tb absolute}
 death_data %>%
   pivot_longer(cols = c("totaal_infectie", "tuberculose", "griep"), names_to = "doodsoorzaak", values_to = "aantal") %>%
@@ -79,7 +80,7 @@ death_data %>%
 ```
 
 
-The amount of people dying from TBC decreased quickly in the first half of the 20th century. But without a cure TBC remained responsible for over 60% of all deaths from infectious diseases. The antibiotic streptomycin was discovered in 1944, with the first clinical trail running from 1946 to 1948. Finally there was a treatment for TBC. In the following decades more antibiotics were discovered, which further improved outcomes. Nowadays only ~2 people per million die of TBC in the netherlands. 
+The amount of people dying from TBC decreased quickly in the first half of the 20th century. But without a cure TBC remained responsible for over 60% of all deaths from infectious diseases. Curing TBC finally became possible when the antibiotic streptomycin was discovered in 1944. The first clinical trail ran from 1946 to 1948. In the following decades more antibiotics were discovered, which further improved outcomes. Nowadays only ~2 people per million die of TBC in the netherlands. 
 ```{r tb relative}
 death_data %>%
   mutate(rel_tbc = tuberculose / totaal_infectie,
