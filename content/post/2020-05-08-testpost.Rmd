@@ -4,9 +4,13 @@ author: Jorik Bot
 date: '2020-05-08'
 slug: testpost
 categories:
-  - r, ggplot2, covid19
+  - r
+  - ggplot2
+  - covid19
 tags:
-  - r, ggplot2, covid19
+  - r
+  - ggplot2
+  - covid19
 ---
 
 ```{r setup, include = FALSE}
@@ -22,10 +26,9 @@ library("cowplot")
 library("tidyverse")
 ```
 
-
-Then the magic:
+Then we query the PMC database with the function epmc_hits_trend, and plot the results.
 ```{r do the thing}
-#Query europe pmc database (includes pubmed)
+#Query europe PMC database (includes pubmed)
 corona_trend <- epmc_hits_trend(query = "coronavirus", 
                                 period = 2002:2020)
 
