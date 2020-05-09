@@ -18,7 +18,7 @@ organizations:
   url: "https://www.lumc.nl/org/anatomie-embryologie/?setlanguage=English"
 
 # Short bio (displayed in user profile at end of posts)
-bio: My research interests include ...
+bio: Site under construction.
 
 interests:
 - CRISPR
