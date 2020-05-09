@@ -20,19 +20,19 @@ organizations:
 # Short bio (displayed in user profile at end of posts)
 bio: Site under construction.
 
-interests:
-- CRISPR
-- Data visualization
-- etc.
+# interests:
+# - CRISPR
+# - Data visualization
+# - etc.
 
-education:
-  courses:
-  - course: MSc in Biology
-    institution: Wageningen University & Research
-    year: 2018
-  - course: BSc in Biology
-    institution: Wageningen University & Research
-    year: 2014
+# education:
+#  courses:
+#  - course: MSc in Biology
+#    institution: Wageningen University & Research
+#    year: 2018
+#  - course: BSc in Biology
+#    institution: Wageningen University & Research
+#    year: 2014
 
 # Social/Academic Networking
 # For available icons, see: https://sourcethemes.com/academic/docs/page-builder/#icons
