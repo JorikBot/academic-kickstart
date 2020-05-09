@@ -46,10 +46,14 @@ corona_trend %>%
          y = "Proportion of all published articles",
          title = "Hits for 'coronavirus' on Europe PMC")+
     #extra annotation specific for this keyword
-    annotate(geom = "rect", xmin = 0.5, xmax = 3.5, ymin = -Inf, ymax = Inf, fill = "red", alpha = 0.3)+
-    annotate(geom = "text", x = 2, y = 0.018, label = "SARS", hjust = "center")+
-    annotate(geom = "text", x = 15.2, y = 0.018, label = "COVID19", hjust = "center")+
-    annotate(geom = "segment", x = 16.5, y = 0.018, xend = 18.3, yend = 0.018, arrow = arrow(length = unit(2, "mm"))) 
+    annotate(geom = "rect", xmin = 0.5, xmax = 3.5, ymin = -Inf, ymax = Inf, 
+             fill = "red", alpha = 0.3)+
+    annotate(geom = "text", x = 2, y = 0.018, label = "SARS", 
+             hjust = "center")+
+    annotate(geom = "text", x = 15.2, y = 0.018, label = "COVID19", 
+             hjust = "center")+
+    annotate(geom = "segment", x = 16.5, y = 0.018, xend = 18.3, yend = 0.018, 
+             arrow = arrow(length = unit(2, "mm"))) 
 ```
 Perhaps unsurprisingly, the COVID19 outbreak has caused a huge increase in articles mentioning coronavirus. 
 

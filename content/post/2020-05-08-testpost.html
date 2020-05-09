@@ -38,8 +38,12 @@ corona_trend %&gt;%
          y = &quot;Proportion of all published articles&quot;,
          title = &quot;Hits for &#39;coronavirus&#39; on Europe PMC&quot;)+
     #extra annotation specific for this keyword
-    annotate(geom = &quot;rect&quot;, xmin = 0.5, xmax = 3.5, ymin = -Inf, ymax = Inf, fill = &quot;red&quot;, alpha = 0.3)+
-    annotate(geom = &quot;text&quot;, x = 2, y = 0.018, label = &quot;SARS&quot;, hjust = &quot;center&quot;)+
-    annotate(geom = &quot;text&quot;, x = 15.2, y = 0.018, label = &quot;COVID19&quot;, hjust = &quot;center&quot;)+
-    annotate(geom = &quot;segment&quot;, x = 16.5, y = 0.018, xend = 18.3, yend = 0.018, arrow = arrow(length = unit(2, &quot;mm&quot;))) </code></pre>
+    annotate(geom = &quot;rect&quot;, xmin = 0.5, xmax = 3.5, ymin = -Inf, ymax = Inf, 
+             fill = &quot;red&quot;, alpha = 0.3)+
+    annotate(geom = &quot;text&quot;, x = 2, y = 0.018, label = &quot;SARS&quot;, 
+             hjust = &quot;center&quot;)+
+    annotate(geom = &quot;text&quot;, x = 15.2, y = 0.018, label = &quot;COVID19&quot;, 
+             hjust = &quot;center&quot;)+
+    annotate(geom = &quot;segment&quot;, x = 16.5, y = 0.018, xend = 18.3, yend = 0.018, 
+             arrow = arrow(length = unit(2, &quot;mm&quot;))) </code></pre>
 <p><img src="/post/2020-05-08-testpost_files/figure-html/do%20the%20thing-1.png" width="672" /> Perhaps unsurprisingly, the COVID19 outbreak has caused a huge increase in articles mentioning coronavirus.</p>
