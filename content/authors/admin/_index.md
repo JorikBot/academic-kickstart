@@ -64,5 +64,5 @@ user_groups:
 - Visitors
 ---
 
-Short description about me?.
+Site under construction.
 
