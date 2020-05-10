@@ -3,6 +3,7 @@ title: Infectious Disease in NL
 author: Jorik Bot
 date: '2020-05-08'
 slug: infectious-disease-in-nl
+draft: true
 categories:
   - r
   - ggplot2
