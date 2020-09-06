@@ -39,8 +39,6 @@ When performing qPCR you typically have three technical replicates of every samp
 * For three or more technical replicates:
   * If the absolute distance between a Cq value and the median Cq is greater than a set threshold, than this value will be removed. 
   * If all Cq values within a technical replicate are more than a threshold apart, they will all be removed. 
-  
-<img src = "/img/infographic.png"></img>
 
 For manipulating the data we will mostly use functions from the tidyverse. 
 
@@ -91,7 +89,9 @@ Next we will join the table back to the original data, so that the median and co
 Note: if there are only two technical replicates within a sample, the median falls exactly between these two values. We want the two replicates to be less than the threshold apart. To get the distance between the replicates we multiply the distance from the median by 2.  
 
 ```{r}
-#As an example we will use a threshold value of 1. This is probably too high for most practical applications. 
+#As an example we will use a threshold value of 1. 
+#This is probably too high for most practical applications. 
+
 threshold <- 1
 
 dev_test <- raw_data %>%
@@ -109,7 +109,7 @@ dev_test <- raw_data %>%
 ```{r, echo=FALSE}
 knitr::kable(
   dev_test[1:5, ], 
-  caption = "Median and count are now a column in the original table."
+  caption = "Median and count are now a column in the original table. (scroll for the keep column)"
 )
 ```
 
@@ -292,5 +292,5 @@ knitr::kable(
   outlier_triplets)
 ```
 
-We indeed find back every outlier condition specified in the beginning of this post. Now we don't have to visually inspect our qPCR results in excel anymore! 
+We indeed find back every kind of outlier condition specified in the beginning of this post. Now we don't have to visually inspect our qPCR results in excel anymore! 
 

@@ -36,7 +36,6 @@ projects: []
 <li>If all Cq values within a technical replicate are more than a threshold apart, they will all be removed.</li>
 </ul></li>
 </ul>
-<p><img src = "/img/infographic.png"></img></p>
 <p>For manipulating the data we will mostly use functions from the tidyverse.</p>
 <pre class="r"><code>library(tidyverse)</code></pre>
 <p>In this example we will use some randomly generated data. It contain Cq values for three genes: gene_a, gene_b and gene_hk (hk = housekeeping). There are three treatment conditions: a, b and ctrl, where ctrl is the untreated control. Three biological replicates are included. The data contains outliers representing all conditions previously specified, which we will try to remove.</p>
@@ -155,7 +154,9 @@ projects: []
 </table>
 <p>Next we will join the table back to the original data, so that the median and count will become their own column. We can then simply remove those samples with only one or zero technical replicates, and calculate the distance from the median for every remaining technical replicate. Finally, a column is created that contains <code>TRUE</code> if the distance from the median is within a threshold value or <code>FALSE</code> if it is not.</p>
 <p>Note: if there are only two technical replicates within a sample, the median falls exactly between these two values. We want the two replicates to be less than the threshold apart. To get the distance between the replicates we multiply the distance from the median by 2.</p>
-<pre class="r"><code>#As an example we will use a threshold value of 1. This is probably too high for most practical applications. 
+<pre class="r"><code>#As an example we will use a threshold value of 1. 
+#This is probably too high for most practical applications. 
+
 threshold &lt;- 1
 
 dev_test &lt;- raw_data %&gt;%
@@ -169,7 +170,7 @@ dev_test &lt;- raw_data %&gt;%
                           if_else(distance_med*2 &lt; threshold, TRUE, FALSE),
                           if_else(distance_med   &lt; threshold, TRUE, FALSE)))</code></pre>
 <table style="width:100%;">
-<caption><span id="tab:unnamed-chunk-5">Table 3: </span>Median and count are now a column in the original table.</caption>
+<caption><span id="tab:unnamed-chunk-5">Table 3: </span>Median and count are now a column in the original table. (scroll for the keep column)</caption>
 <colgroup>
 <col width="12%" />
 <col width="9%" />
@@ -727,5 +728,5 @@ clean_data &lt;- dev_test %&gt;%
 </tr>
 </tbody>
 </table>
-<p>We indeed find back every outlier condition specified in the beginning of this post. Now we don’t have to visually inspect our qPCR results in excel anymore!</p>
+<p>We indeed find back every kind of outlier condition specified in the beginning of this post. Now we don’t have to visually inspect our qPCR results in excel anymore!</p>
 </div>
