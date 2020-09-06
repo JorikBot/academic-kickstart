@@ -1,8 +1,8 @@
 ---
-title: A function to removing qPCR outliers within technical replicates
+title: An R function to removing qPCR outliers within technical replicates
 author: Jorik Bot
 date: '2020-09-06'
-slug: a-function-to-removing-qpcr-outliers-within-technical-replicates
+slug: an-R-function-to-removing-qpcr-outliers-within-technical-replicates
 categories:
   - r
   - qPCR
@@ -32,18 +32,15 @@ library(knitr)
 
 ## The problem
 
-When performing qPCR you typically have three technical replicates of every sample. The Cq values within replicates are expected to very close to each other. However, sometimes outliers occur thru inaccurate pipetting, accidentally pipetting in the wrong well or seal detachment. Typically a Cq value more than 0.5 apart from the other two is considered an outlier. Some people prefer an ever stricter cutoff. On the other hand, if the target gene has very low expression - and thus high Cq values - high variation is unavoidable and a more lenient threshold might be preferred. In this post we will make a function that finds and removes outliers based on the deviation from the median value, given a certain threshold value. The function will use the following rules: 
+When performing qPCR you typically have three technical replicates of every sample. The Cq values within replicates are expected to very close to each other. However, sometimes outliers occur thru for example, inaccurate pipetting, accidentally pipetting in the wrong well or seal detachment. Typically a Cq value more than 0.5 apart from the other two is considered an outlier. Some people prefer an ever stricter cutoff. On the other hand, if the target gene has very low expression - and thus high Cq values - high variation is unavoidable and a more lenient threshold might be preferred. In this post we will make a function that finds and removes outliers based on the deviation from the median value, given a certain threshold value. The function will use the following rules: 
 
 * If only one Cq value is present (i.e. the other replicates failed to produce a Cq value), it will be removed. 
 * If only two Cq values are present, they need to be less than a threshold apart. 
 * For three or more technical replicates:
   * If the absolute distance between a Cq value and the median Cq is greater than a set threshold, than this value will be removed. 
   * If all Cq values within a technical replicate are more than a threshold apart, they will all be removed. 
-
-```{r, echo  = FALSE}
-infographic <- "infographic.png"
-include_graphics(infographic)
-```
+  
+<img src = "/img/infographic.png"></img>
 
 For manipulating the data we will mostly use functions from the tidyverse. 
 
@@ -51,7 +48,7 @@ For manipulating the data we will mostly use functions from the tidyverse.
 library(tidyverse)
 ```
 
-In this example we will use some randomly generated data. It contain Cq values for three genes: gene_a, gene_b and gene_hk (hk = housekeeping). There are three treatment conditions: a, b and ctrl. ctrl is the untreated control. Three biological replicates are included. The data contains outliers representing all conditions previously specified, which we will try to remove.
+In this example we will use some randomly generated data. It contain Cq values for three genes: gene_a, gene_b and gene_hk (hk = housekeeping). There are three treatment conditions: a, b and ctrl, where ctrl is the untreated control. Three biological replicates are included. The data contains outliers representing all conditions previously specified, which we will try to remove.
 
 ```{r loading data,echo=FALSE}
 raw_data <- read_delim(file = "rawcqvalues.csv", delim = ";") # see above for which function to use if you use your own file. 
@@ -59,7 +56,7 @@ raw_data <- read_delim(file = "rawcqvalues.csv", delim = ";") # see above for wh
 
 The data is in a [tidy format](https://r4ds.had.co.nz/tidy-data.html), meaning that every variable has its own column, and every measurement has its own row.
 
-```{r check import, echo=FALSE}
+```{r, echo=FALSE}
 knitr::kable(
   raw_data[1:5, ], 
   caption = "First 5 rows of the raw data"
@@ -70,8 +67,8 @@ knitr::kable(
 
 For every sample we will calculate: 
 
-* The median Cq value
-* The number of replicates that have a value at all. The purpose of this step is to remove those samples where only one or no wells resulted in a Cq value. 
+* The median Cq value.
+* The number of replicates that have a value at all. The purpose of this step is to enable removing those samples where only one or no wells resulted in a Cq value. 
 
 ```{r}
 median_cq <- raw_data %>%
@@ -85,11 +82,11 @@ median_cq <- raw_data %>%
 ```{r, echo=FALSE}
 knitr::kable(
   median_cq[1:5, ], 
-  caption = "First 5 rows of the data"
+  caption = "First 5 rows of median and count values"
 )
 ```
 
-Next we will join the table back to the original data, so that the median and count will become their own column. We can then simply remove those samples with only one or zero technical replicates, and calculate the distance from the median for every remaining technical replicate. Finally, a column is created that contains TRUE if the distance from the median is within a threshold value or FALSE if it is not. 
+Next we will join the table back to the original data, so that the median and count will become their own column. We can then simply remove those samples with only one or zero technical replicates, and calculate the distance from the median for every remaining technical replicate. Finally, a column is created that contains `TRUE` if the distance from the median is within a threshold value or `FALSE` if it is not. 
 
 Note: if there are only two technical replicates within a sample, the median falls exactly between these two values. We want the two replicates to be less than the threshold apart. To get the distance between the replicates we multiply the distance from the median by 2.  
 
@@ -112,25 +109,27 @@ dev_test <- raw_data %>%
 ```{r, echo=FALSE}
 knitr::kable(
   dev_test[1:5, ], 
-  caption = "First 5 rows of the data"
+  caption = "Median and count are now a column in the original table."
 )
 ```
 
 There is one condition left we need to be able to remove, namely where all three technical replicates are more than the threshold apart from each other. Using the table we have generated so far the middle replicate will be kept, because it is the median and therefore the distance from the median is 0. To get rid of this we will only keep samples where at least two replicates are marked as `TRUE` in the `keep` column. 
 
 ```{r}
-#count the number of TRUEs 
+# count the number of TRUEs 
 count_true <- dev_test %>%
     group_by(treatment, primer_pair, bio_rep) %>%
     summarise(count_keep = sum(keep, na.rm = TRUE)) %>%
     ungroup()
 
-#
+# finally, filter out all outliers
 clean_data <- dev_test %>%
     full_join(count_true, by = c("treatment", "primer_pair", "bio_rep")) %>%
-    filter(keep == TRUE,         #remove outliers
-           count_keep > 1) %>%   #remove samples where all are more than the threshold apart
-    select(-(median_cq:count_keep)) #remove the now unnecessary columns
+    # remove outliers
+    filter(keep == TRUE,         
+           count_keep > 1) %>%   
+    # remove the now unnecessary columns
+    select(-(median_cq:count_keep)) 
 ```
 
 ```{r, echo=FALSE}
@@ -166,50 +165,64 @@ Our function will have the following arguments:
 * The first argument is name of the data we want to use. 
 * `cq = ` tells the function the name of the column containing the Cq values. 
 * With `threshold = ` we can set the maximum distance from the median. 
-* Finally, the function needs the names of all other columns that are not the cq_values or denote technical replicates. These will be used to make groups, calculations will be made for each unique combination. 
+* Finally, the function needs the names of all other columns that are not the cq_values or denote technical replicates. These will be used to make groups. Calculations will be made for each unique combination. 
 
-Which and how many experimental variables there are depends on the experimental setup. Therefore, the final argument of the function is `...`. Now we can supply any number of column names (unquoted and separated by a comma). Inside the `qpcr_clean()` function, `...` can be passed to `group_by()`. There is just one problem. The tidyverse function `full_join()` needs the same set of column names to join the tables by, but as a character vector. Luckely `...` can be converted to such a vector with: `dots <- names(enquos(..., .named = TRUE))`. 
+Which and how many experimental variables there are depends on the experimental setup. Therefore, the final argument of the function is `...`. Now we can supply any number of column names (unquoted and separated by a comma). Inside the `qpcr_clean()` function, `...` can be passed to `group_by()`. There is just one problem. The tidyverse function `full_join()` needs the same set of column names to join the tables by, but as a character vector. Luckely `...` can be converted to such a vector with: 
+
+```{r, eval=FALSE}
+dots <- names(enquos(..., .named = TRUE))
+```
+
 
 Finally the name of the column containing the Cq values can be passed to the tidyverse functions by surrounding `cq` with double braces: `{{cq}}`.
 
 
 ```{r}
 qpcr_clean <- function(.data, cq, threshold, ...){
-  # to do: add if statements for errors.
+  # to do: add if statements to check input data etc.
+  
+  # convert ... to character vector
   dots <- names(enquos(..., .named = TRUE))
   
+  # calculate the median and count for every sample
   median_cq <- .data %>%
     group_by(...) %>%
-    summarise(median_cq = median({{cq}}, na.rm = TRUE), #calculate the median cq value
-            count = sum(!is.na({{cq}}))) %>% #count the amount of techreps with a cq value
+    summarise(median_cq = median({{cq}}, na.rm = TRUE), 
+            count = sum(!is.na({{cq}}))) %>% 
     ungroup()
   
+  # remove solo tech reps, test if distance from the median is < threshold
   dev_test <- .data %>%
     full_join(median_cq, by = dots) %>%
-    filter(count > 1) %>% #take out tech reps with only 1 value
-    mutate(distance_med = abs({{cq}} - median_cq)) %>%  #calculate deviation from median
+    filter(count > 1) %>% 
+    mutate(distance_med = abs({{cq}} - median_cq)) %>%  
     mutate(keep = if_else(count == 2,
                           if_else(distance_med*2 < threshold, TRUE, FALSE),
                           if_else(distance_med   < threshold, TRUE, FALSE)))
   
+  # count the # of TRUEs per sample
   count_true <- dev_test %>%
     group_by(...) %>%
     summarise(count_keep = sum(keep, na.rm = TRUE)) %>%
     ungroup()
   
+  # remove all outliers
   clean_data <- dev_test %>%
     full_join(count_true, by = dots) %>%
-    filter(count_keep > 1, #remove samples where all are more than the threshold apart
-           keep == TRUE) %>% #remove all other outliers
-    select(-(median_cq:count_keep)) #remove the now unnecessary columns
+    filter(count_keep > 1, 
+           keep == TRUE) %>% 
+    select(-(median_cq:count_keep)) 
   clean_data
 }
 ```
 
-Lets test if it works. 
+Lets test if it works:
 
 ```{r}
-clean_data <- qpcr_clean(raw_data, cq = cq_values, threshold = 1, treatment, primer_pair, bio_rep)
+clean_data <- qpcr_clean(raw_data, 
+                         cq = cq_values, 
+                         threshold = 1, 
+                         treatment, primer_pair, bio_rep)
 ```
 
 ```{r, echo=FALSE}
@@ -225,11 +238,11 @@ For context, you might want to see the other Cq values within a technical replic
 
 The function arguments will be:
 
-* `raw_data = `     Here we supply the raw unfiltered data
-* `clean_data =`    Here we supply the cleaned data from the `qpcr_clean()` function
-* `cq_values = `    Give name of the column containing the cq values
-* `tech_rep = `     Give the name of the column containing the technical replicate information
-* `...`             All other column names, excluding the columns containing the Cq values or technical replicates. 
+* With `raw_data = ` we supply the raw unfiltered data
+* With `clean_data =` we supply the cleaned data from the `qpcr_clean()` function
+* `cq_values = ` is used to give name of the column containing the cq values
+* `tech_rep = ` gives the name of the column containing the technical replicate information
+* `...` all other column names, excluding the columns containing the Cq values or technical replicates. 
 
 ```{r}
 qpcr_outlier_context <- function(raw_data, clean_data, cq_values, tech_rep, ...){
@@ -279,5 +292,5 @@ knitr::kable(
   outlier_triplets)
 ```
 
-We indeed find back every outlier condition specified in the beginning of this post. 
+We indeed find back every outlier condition specified in the beginning of this post. Now we don't have to visually inspect our qPCR results in excel anymore! 
 
