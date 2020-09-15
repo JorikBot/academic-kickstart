@@ -26,7 +26,7 @@ projects: []
 
 <div id="the-problem" class="section level2">
 <h2>The problem</h2>
-<p>When performing qPCR you typically have three technical replicates of every sample. The Cq values within replicates are expected to very close to each other. However, sometimes outliers occur thru for example, inaccurate pipetting, accidentally pipetting in the wrong well or seal detachment. Typically a Cq value more than 0.5 apart from the other two is considered an outlier. Some people prefer an ever stricter cutoff. On the other hand, if the target gene has very low expression - and thus high Cq values - high variation is unavoidable and a more lenient threshold might be preferred. In this post we will make a function that finds and removes outliers based on the deviation from the median value, given a certain threshold value. The function will use the following rules:</p>
+<p>When performing qPCR you typically have three technical replicates of every sample. The Cq values within replicates are expected to be very close to each other. However, sometimes outliers occur thru for example, inaccurate pipetting, accidentally pipetting in the wrong well or seal detachment. Typically a Cq value more than 0.5 apart from the other two is considered an outlier. Some people prefer an ever stricter cutoff. On the other hand, if the target gene has very low expression - and thus high Cq values - high variation is unavoidable and a more lenient threshold might be preferred. In this post we will make a function that finds and removes outliers based on the deviation from the median value, given a certain threshold value. The function will use the following rules:</p>
 <ul>
 <li>If only one Cq value is present (i.e. the other replicates failed to produce a Cq value), it will be removed.</li>
 <li>If only two Cq values are present, they need to be less than a threshold apart.</li>
@@ -36,6 +36,7 @@ projects: []
 <li>If all Cq values within a technical replicate are more than a threshold apart, they will all be removed.</li>
 </ul></li>
 </ul>
+<p><img src="/img/infographic.png" /></p>
 <p>For manipulating the data we will mostly use functions from the tidyverse.</p>
 <pre class="r"><code>library(tidyverse)</code></pre>
 <p>In this example we will use some randomly generated data. It contain Cq values for three genes: gene_a, gene_b and gene_hk (hk = housekeeping). There are three treatment conditions: a, b and ctrl, where ctrl is the untreated control. Three biological replicates are included. The data contains outliers representing all conditions previously specified, which we will try to remove.</p>
