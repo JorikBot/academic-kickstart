@@ -24,16 +24,14 @@ projects: []
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Intro
-
-In this short post I will show how to quickly get bioanalyzer trace data into R and ready for plotting. 
+This short post will show how to quickly get bioanalyzer trace data into R and ready for plotting. 
 On the way we will make use of the tidyverse packages.
 
 ```{r, message=FALSE}
 library(tidyverse)
 ```
 
-You can get the raw data out of the bioanalyzer by going file>export. Somewhat depending on the options you select next, it will spit out many different files:
+You can get the raw data out of the bioanalyzer by going File > Export. Somewhat depending on the options you select next, it will spit out many different files:
 
 ```{r}
 list.files(path = "./20210106data")
@@ -42,11 +40,13 @@ list.files(path = "./20210106data")
 Annoyingly, the raw data for each well of the bioanalyzer chip is found in a separate csv file. Manually pasting these together in excel is too much clicking, and more importantly error prone. Depending on your location, excel may see the comma as the thousand separator, which makes converting the csv file into excel columns with Data > Text to Columns go wrong for some rows. Importing the csv files into r will not run into this problem. 
 
 I generally start out by creating an r project in the folder containing the bioanalyzer data. Among other things, this avoids having to set the working directory. 
-The next step is to separate the csv files containing the raw data from the rest. Luckily, they all always end in "Sample" + the well number + ".csv" (at least for RNA nano and pico chips). We can use this pattern to isolate them, by creating a regular expression and giving this pattern to `list.files()`. We are not interested in what comes before Sample, so we can preface Sample with the * symbol. This means zero or more of anything can occur. Sample is always followed by one or more digits. We tell the function to look for a digit using \\d and use + to allow for one or more them. Finally, all these files should end in .csv. The \$ sign signifies that the string should end there. We have now arrived at the regular expression "*Sample\\d+.csv$"
+
+The next step is to separate the csv files containing the raw data from the rest. Luckily, they always end in "Sample" + the well number + ".csv" (at least for RNA nano and pico chips). We can use this pattern to isolate them, by creating a regular expression and giving this pattern to `list.files()`. We are not interested in what comes before Sample, so we can preface Sample with the * symbol. This means zero or more of anything can occur. Sample is always followed by one or more digits. We tell the function to look for a digit using \\d and + to allow for one or more them. Finally, all these files should end in .csv. The dollar sign signifies that the string should end there. 
 
 ```{r}
 # Ignore the path = , this is only here because of how the website is structured. 
-# If you have made an r project inside the folder containing the bioanalyzer data you won't need it. 
+# If you have made an r project inside the folder containing the bioanalyzer 
+# data you won't need it. 
 
 samples <- list.files(path = "./20210106data", pattern = "*Sample\\d+.csv$")
 samples
@@ -56,7 +56,7 @@ It worked!
 
 Let's look at what happens when we import one of these files. 
 
-```{r}
+```{r, message = FALSE}
 # Again, the path = , and paste0 shenanigans is only needed for the website. 
 # In a normal situation just read_csv(samples[1]) would be enough.
 
@@ -67,7 +67,7 @@ sample1
 
 The first few rows are metadata we are not really interested in. In fact, we can skip the first 17 rows. 
 
-```{r}
+```{r, message = FALSE}
 sample1 <- read_csv(paste0(path, samples[1]),
                     skip = 17)
 ```
@@ -80,7 +80,7 @@ sample1[1055:1061,]
 
 To prevent this we can tell `read_csv` to not read this far into the file. 
 
-```{r}
+```{r, message = FALSE}
 sample1 <- read_csv(paste0(path, samples[1]),
                     skip = 17,
                     n_max = 1060)
