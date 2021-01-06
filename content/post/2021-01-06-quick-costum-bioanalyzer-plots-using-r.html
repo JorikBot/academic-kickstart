@@ -1,0 +1,199 @@
+---
+title: Quick costum bioanalyzer plots using R
+author: Jorik Bot
+date: '2021-01-06'
+slug: quick-costum-bioanalyzer-plots-using-r
+categories:
+  - r
+tags:
+  - r
+  - Tidyverse
+subtitle: ''
+summary: ''
+authors: []
+lastmod: '2021-01-06T20:27:16+01:00'
+featured: no
+image:
+  caption: ''
+  focal_point: ''
+  preview_only: no
+projects: []
+---
+
+
+
+<div id="intro" class="section level2">
+<h2>Intro</h2>
+<p>In this short post I will show how to quickly get bioanalyzer trace data into R and ready for plotting.
+On the way we will make use of the tidyverse packages.</p>
+<pre class="r"><code>library(tidyverse)</code></pre>
+<p>You can get the raw data out of the bioanalyzer by going file&gt;export. Somewhat depending on the options you select next, it will spit out many different files:</p>
+<pre class="r"><code>list.files(path = &quot;./20210106data&quot;)</code></pre>
+<pre><code>##  [1] &quot;2100 expert_Eukaryote Total RNA Nano_DE13805377_2020-05-25_11-42-52.xml&quot;            
+##  [2] &quot;2100 expert_Eukaryote Total RNA Nano_DE13805377_2020-05-25_11-42-52_GEL.bmp&quot;        
+##  [3] &quot;2100 expert_Eukaryote Total RNA Nano_DE13805377_2020-05-25_11-42-52_GEL_Ladder.bmp&quot; 
+##  [4] &quot;2100 expert_Eukaryote Total RNA Nano_DE13805377_2020-05-25_11-42-52_GEL_Sample1.bmp&quot;
+##  [5] &quot;2100 expert_Eukaryote Total RNA Nano_DE13805377_2020-05-25_11-42-52_GEL_Sample2.bmp&quot;
+##  [6] &quot;2100 expert_Eukaryote Total RNA Nano_DE13805377_2020-05-25_11-42-52_GEL_Sample3.bmp&quot;
+##  [7] &quot;2100 expert_Eukaryote Total RNA Nano_DE13805377_2020-05-25_11-42-52_GEL_Sample4.bmp&quot;
+##  [8] &quot;2100 expert_Eukaryote Total RNA Nano_DE13805377_2020-05-25_11-42-52_GEL_Sample5.bmp&quot;
+##  [9] &quot;2100 expert_Eukaryote Total RNA Nano_DE13805377_2020-05-25_11-42-52_GEL_Sample6.bmp&quot;
+## [10] &quot;2100 expert_Eukaryote Total RNA Nano_DE13805377_2020-05-25_11-42-52_Ladder.csv&quot;     
+## [11] &quot;2100 expert_Eukaryote Total RNA Nano_DE13805377_2020-05-25_11-42-52_Results.csv&quot;    
+## [12] &quot;2100 expert_Eukaryote Total RNA Nano_DE13805377_2020-05-25_11-42-52_Sample1.csv&quot;    
+## [13] &quot;2100 expert_Eukaryote Total RNA Nano_DE13805377_2020-05-25_11-42-52_Sample2.csv&quot;    
+## [14] &quot;2100 expert_Eukaryote Total RNA Nano_DE13805377_2020-05-25_11-42-52_Sample3.csv&quot;    
+## [15] &quot;2100 expert_Eukaryote Total RNA Nano_DE13805377_2020-05-25_11-42-52_Sample4.csv&quot;    
+## [16] &quot;2100 expert_Eukaryote Total RNA Nano_DE13805377_2020-05-25_11-42-52_Sample5.csv&quot;    
+## [17] &quot;2100 expert_Eukaryote Total RNA Nano_DE13805377_2020-05-25_11-42-52_Sample6.csv&quot;</code></pre>
+<p>Annoyingly, the raw data for each well of the bioanalyzer chip is found in a separate csv file. Manually pasting these together in excel is too much clicking, and more importantly error prone. Depending on your location, excel may see the comma as the thousand separator, which makes converting the csv file into excel columns with Data &gt; Text to Columns go wrong for some rows. Importing the csv files into r will not run into this problem.</p>
+<p>I generally start out by creating an r project in the folder containing the bioanalyzer data. Among other things, this avoids having to set the working directory.
+The next step is to separate the csv files containing the raw data from the rest. Luckily, they all always end in “Sample” + the well number + “.csv” (at least for RNA nano and pico chips). We can use this pattern to isolate them, by creating a regular expression and giving this pattern to <code>list.files()</code>. We are not interested in what comes before Sample, so we can preface Sample with the * symbol. This means zero or more of anything can occur. Sample is always followed by one or more digits. We tell the function to look for a digit using \d and use + to allow for one or more them. Finally, all these files should end in .csv. The $ sign signifies that the string should end there. We have now arrived at the regular expression "*Sample\d+.csv$"</p>
+<pre class="r"><code># Ignore the path = , this is only here because of how the website is structured. 
+# If you have made an r project inside the folder containing the bioanalyzer data you won&#39;t need it. 
+
+samples &lt;- list.files(path = &quot;./20210106data&quot;, pattern = &quot;*Sample\\d+.csv$&quot;)
+samples</code></pre>
+<pre><code>## [1] &quot;2100 expert_Eukaryote Total RNA Nano_DE13805377_2020-05-25_11-42-52_Sample1.csv&quot;
+## [2] &quot;2100 expert_Eukaryote Total RNA Nano_DE13805377_2020-05-25_11-42-52_Sample2.csv&quot;
+## [3] &quot;2100 expert_Eukaryote Total RNA Nano_DE13805377_2020-05-25_11-42-52_Sample3.csv&quot;
+## [4] &quot;2100 expert_Eukaryote Total RNA Nano_DE13805377_2020-05-25_11-42-52_Sample4.csv&quot;
+## [5] &quot;2100 expert_Eukaryote Total RNA Nano_DE13805377_2020-05-25_11-42-52_Sample5.csv&quot;
+## [6] &quot;2100 expert_Eukaryote Total RNA Nano_DE13805377_2020-05-25_11-42-52_Sample6.csv&quot;</code></pre>
+<p>It worked!</p>
+<p>Let’s look at what happens when we import one of these files.</p>
+<pre class="r"><code># Again, the path = , and paste0 shenanigans is only needed for the website. 
+# In a normal situation just read_csv(samples[1]) would be enough.
+
+path &lt;- &quot;./20210106data/&quot;
+sample1 &lt;- read_csv(paste0(path, samples[1]))</code></pre>
+<pre><code>## Parsed with column specification:
+## cols(
+##   `Data File Name` = col_character(),
+##   `2100 expert_Eukaryote Total RNA Nano_DE13805377_2020-05-25_11-42-52.xad` = col_character()
+## )</code></pre>
+<pre class="r"><code>sample1</code></pre>
+<pre><code>## # A tibble: 1,074 x 2
+##    `Data File Name`     `2100 expert_Eukaryote Total RNA Nano_DE13805377_2020-0~
+##    &lt;chr&gt;                &lt;chr&gt;                                                   
+##  1 Data File Path       &quot;C:\\Program Files (x86)\\Agilent\\2100 bioanalyzer\\21~
+##  2 Date Created         &quot;Monday, May 25, 2020 9:42:52 AM&quot;                       
+##  3 Date Last Modified   &quot;Monday, May 25, 2020 10:06:42 AM&quot;                      
+##  4 Version Created      &quot;B.02.10.SI764&quot;                                         
+##  5 Version Last Modifi~ &quot;B.02.10.SI764&quot;                                         
+##  6 Assay Name           &quot;Eukaryote Total RNA Nano Series II&quot;                    
+##  7 Assay Path           &quot;C:\\Program Files (x86)\\Agilent\\2100 bioanalyzer\\21~
+##  8 Assay Title          &quot;Eukaryote Total RNA Nano&quot;                              
+##  9 Assay Version        &quot;2.6&quot;                                                   
+## 10 Number of Samples R~ &quot;12&quot;                                                    
+## # ... with 1,064 more rows</code></pre>
+<p>The first few rows are metadata we are not really interested in. In fact, we can skip the first 17 rows.</p>
+<pre class="r"><code>sample1 &lt;- read_csv(paste0(path, samples[1]),
+                    skip = 17)</code></pre>
+<pre><code>## Parsed with column specification:
+## cols(
+##   Time = col_double(),
+##   Value = col_double()
+## )</code></pre>
+<pre><code>## Warning: 2 parsing failures.
+##  row   col expected    actual                                                                                             file
+## 1061 Time  a double Alignment &#39;./20210106data/2100 expert_Eukaryote Total RNA Nano_DE13805377_2020-05-25_11-42-52_Sample1.csv&#39;
+## 1061 Value a double On        &#39;./20210106data/2100 expert_Eukaryote Total RNA Nano_DE13805377_2020-05-25_11-42-52_Sample1.csv&#39;</code></pre>
+<p>We get 2 parsing failures. That is because, all the way at the bottom of the file, some text (“alignment on”) appears where only numbers are expected, which results in NA values in the final row of our table.</p>
+<pre class="r"><code>sample1[1055:1061,]</code></pre>
+<pre><code>## # A tibble: 7 x 2
+##    Time  Value
+##   &lt;dbl&gt;  &lt;dbl&gt;
+## 1  69.7  0.747
+## 2  69.8  0.747
+## 3  69.8  0.747
+## 4  69.8  0.747
+## 5  69.9  0.747
+## 6  70.0  0.747
+## 7  NA   NA</code></pre>
+<p>To prevent this we can tell <code>read_csv</code> to not read this far into the file.</p>
+<pre class="r"><code>sample1 &lt;- read_csv(paste0(path, samples[1]),
+                    skip = 17,
+                    n_max = 1060)</code></pre>
+<pre><code>## Parsed with column specification:
+## cols(
+##   Time = col_double(),
+##   Value = col_double()
+## )</code></pre>
+<p>No failures this time!</p>
+<p>Now we can use a for loop to import all the data files and merge them into one big table. We will use <code>mutate</code> to make a new column that contains the well number each measurement originates from. <code>str_extract</code> is used to extract this information from the file name.</p>
+<pre class="r"><code>all_data &lt;- tibble()
+
+for(i in samples){
+  data &lt;- read_csv(paste0(path, i), 
+                   skip = 17, 
+                   n_max = 1060)
+  data &lt;- mutate(data, sample_nr = str_extract(i, pattern = &quot;Sample\\d+&quot;))
+  all_data &lt;- rbind(all_data, data)
+}
+head(all_data)</code></pre>
+<pre><code>## # A tibble: 6 x 3
+##    Time  Value sample_nr
+##   &lt;dbl&gt;  &lt;dbl&gt; &lt;chr&gt;    
+## 1  17   0.0166 Sample1  
+## 2  17.0 0.0247 Sample1  
+## 3  17.1 0.0391 Sample1  
+## 4  17.2 0.0626 Sample1  
+## 5  17.2 0.0791 Sample1  
+## 6  17.2 0.0929 Sample1</code></pre>
+<p>It would be even more convenient if the sample_nr column only contained, well … , numbers.
+Again <code>str_extract</code> can help use remove all the unwanted symbols. Even though we are only left we numbers, we still need to convert it to a numeric, because a string will stay a string until told otherwise.</p>
+<pre class="r"><code>all_data &lt;- all_data %&gt;%
+  mutate(sample_nr = as.numeric(str_extract(sample_nr, pattern = &quot;\\d+$&quot;)))
+head(all_data)</code></pre>
+<pre><code>## # A tibble: 6 x 3
+##    Time  Value sample_nr
+##   &lt;dbl&gt;  &lt;dbl&gt;     &lt;dbl&gt;
+## 1  17   0.0166         1
+## 2  17.0 0.0247         1
+## 3  17.1 0.0391         1
+## 4  17.2 0.0626         1
+## 5  17.2 0.0791         1
+## 6  17.2 0.0929         1</code></pre>
+<p>Now it is also easy to add additional information about each sample. You could simply prepare a table in excel that contains at least a sample_nr column, and any number of additional columns with extra information.</p>
+<pre class="r"><code>exp_design &lt;- read_delim(&quot;20210106_exp_design.csv&quot;, delim = &quot;;&quot;)
+head(exp_design)</code></pre>
+<pre><code>## # A tibble: 6 x 3
+##   sample_nr cell_line treatment
+##       &lt;dbl&gt; &lt;chr&gt;     &lt;chr&gt;    
+## 1         1 HEK293    CTRL     
+## 2         2 HEK293    CTRL     
+## 3         3 HEK293    CTRL     
+## 4         4 HEK293    treatment
+## 5         5 HEK293    treatment
+## 6         6 HEK293    treatment</code></pre>
+<p>Finally we can join these two tables together based on the sample_nr column.</p>
+<pre class="r"><code>all_data &lt;- all_data %&gt;%
+  left_join(exp_design, by = &quot;sample_nr&quot;)
+head(all_data)</code></pre>
+<pre><code>## # A tibble: 6 x 5
+##    Time  Value sample_nr cell_line treatment
+##   &lt;dbl&gt;  &lt;dbl&gt;     &lt;dbl&gt; &lt;chr&gt;     &lt;chr&gt;    
+## 1  17   0.0166         1 HEK293    CTRL     
+## 2  17.0 0.0247         1 HEK293    CTRL     
+## 3  17.1 0.0391         1 HEK293    CTRL     
+## 4  17.2 0.0626         1 HEK293    CTRL     
+## 5  17.2 0.0791         1 HEK293    CTRL     
+## 6  17.2 0.0929         1 HEK293    CTRL</code></pre>
+<p>At this point you could save the final table if you want to make plots in other software.</p>
+<pre class="r"><code>write_csv(all_data, &quot;bioanalyzer_data.csv&quot;)</code></pre>
+<p>Or you can make plots in r.</p>
+<pre class="r"><code>library(ggpubr)
+library(ggsci)
+
+all_data %&gt;%
+  ggplot(aes(x = Time, y = Value, color = as.character(sample_nr)))+
+    geom_line()+
+    facet_grid(cols = vars(treatment))+
+    scale_x_continuous(breaks = c(20, 40, 60))+
+    scale_color_jco(name = &quot;Chip well&quot;)+
+    theme_pubr()+
+    labs(x = &quot;Time in seconds&quot;,
+         y = &quot;Fluorescence (a.u.)&quot;)</code></pre>
+<p><img src="/post/2021-01-06-quick-costum-bioanalyzer-plots-using-r_files/figure-html/unnamed-chunk-13-1.png" width="672" /></p>
+</div>
