@@ -24,12 +24,15 @@ projects: []
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-This short post will show how to quickly get bioanalyzer trace data into R and ready for plotting. 
+The default plots made by the bioanalyzer are, in my opinion, not amazing. For one, the lines are really thin. Furthermore, sometimes to compare different samples, it would be nice to draw two traces is the same plot. Luckily, the bioanalyzer software also lets you export the raw data. This short post will show how to quickly get bioanalyzer trace data into R and ready for plotting. 
+
 On the way we will make use of the tidyverse packages.
 
 ```{r, message=FALSE}
 library(tidyverse)
 ```
+
+## Importing one file into r
 
 You can get the raw data out of the bioanalyzer by going File > Export. Somewhat depending on the options you select next, it will spit out many different files:
 
@@ -37,11 +40,11 @@ You can get the raw data out of the bioanalyzer by going File > Export. Somewhat
 list.files(path = "./20210106data")
 ```
 
-Annoyingly, the raw data for each well of the bioanalyzer chip is found in a separate csv file. Manually pasting these together in excel is too much clicking, and more importantly error prone. Depending on your location, excel may see the comma as the thousand separator, which makes converting the csv file into excel columns with Data > Text to Columns go wrong for some rows. Importing the csv files into r will not run into this problem. 
+Annoyingly, the raw data for each well of the bioanalyzer chip is found in a separate csv file. Manually pasting these together in excel is too much clicking, and more importantly error prone. Depending on your location, excel may see the comma as the thousand separator, which makes converting the csv file into excel columns with Data > Text to Columns go wrong for some rows (specifically those with a round number for time and high fluorescence, like 40,123). Importing the csv files into r will not run into this problem. 
 
 I generally start out by creating an r project in the folder containing the bioanalyzer data. Among other things, this avoids having to set the working directory. 
 
-The next step is to separate the csv files containing the raw data from the rest. Luckily, they always end in "Sample" + the well number + ".csv" (at least for RNA nano and pico chips). We can use this pattern to isolate them, by creating a regular expression and giving this pattern to `list.files()`. We are not interested in what comes before Sample, so we can preface Sample with the * symbol. This means zero or more of anything can occur. Sample is always followed by one or more digits. We tell the function to look for a digit using \\d and + to allow for one or more them. Finally, all these files should end in .csv. The dollar sign signifies that the string should end there. 
+The next step is to separate the csv files containing the raw data from the rest. Luckily, they always end in "Sample" + the well number + ".csv" (at least for RNA nano and pico chips). We can use this pattern to isolate them, by creating a regular expression and feeding this pattern to `list.files()`. We are not interested in what comes before Sample, so we can preface Sample with the * symbol. This means zero or more of anything can occur. Sample is always followed by one or more digits. We tell the function to look for a digit using \\\\d and + to allow for one or more them. Finally, all these files should end in .csv. The dollar sign signifies that the string should end there. 
 
 ```{r}
 # Ignore the path = , this is only here because of how the website is structured. 
@@ -62,20 +65,29 @@ Let's look at what happens when we import one of these files.
 
 path <- "./20210106data/"
 sample1 <- read_csv(paste0(path, samples[1]))
-sample1
 ```
 
-The first few rows are metadata we are not really interested in. In fact, we can skip the first 17 rows. 
+```{r, echo=FALSE}
+knitr::kable(
+  sample1[1:15, ],
+  caption = "Import attempt one"
+)
+```
+
+The first few rows are all metadata we are not really interested in. We only need the Time and Value information. Therefore, we can skip the first 17 rows (including some empty rows). 
 
 ```{r, message = FALSE}
 sample1 <- read_csv(paste0(path, samples[1]),
                     skip = 17)
 ```
 
-We get 2 parsing failures. That is because, all the way at the bottom of the file, some text ("alignment on") appears where only numbers are expected, which results in NA values in the final row of our table. 
+But now we get 2 parsing failures. That is because, all the way at the bottom of the file, some text ("alignment, on") appears where only numbers are expected, which results in NA values in the final row of our table. 
 
-```{r}
-sample1[1055:1061,]
+```{r, echo=FALSE}
+knitr::kable(
+  sample1[1055:1061, ],
+  caption = "Import attempt two"
+)
 ```
 
 To prevent this we can tell `read_csv` to not read this far into the file. 
@@ -88,7 +100,27 @@ sample1 <- read_csv(paste0(path, samples[1]),
 
 No failures this time!
 
-Now we can use a for loop to import all the data files and merge them into one big table. We will use `mutate` to make a new column that contains the well number each measurement originates from. `str_extract` is used to extract this information from the file name. 
+## Importing multiple files into r
+
+We have successfully imported the information of one well into r. But there are 11 or 12 wells on a chip. One option is to simply copy paste the code 12 times and change the numbers each time. But this leads to a lot of lines of code and increases the risk of errors. 
+
+```{r, eval=FALSE}
+sample1 <- read_csv(paste0(path, samples[1]),
+                    skip = 17,
+                    n_max = 1060)
+
+sample2 <- read_csv(paste0(path, samples[2]),
+                    skip = 17,
+                    n_max = 1060)
+
+# O no, a typo
+sample2 <- read_csv(paste0(path, samples[3]),
+                    skip = 17,
+                    n_max = 1060)
+# Etc. 
+```
+
+Instead, we can use a single `for` loop to import all the data files. In this loop we also save them into one big data table. We will use `mutate` to make a new column that contains the well number each measurement originates from. `str_extract` is used to extract this information from the file name. 
 
 ```{r, message=FALSE}
 all_data <- tibble()
@@ -97,26 +129,48 @@ for(i in samples){
   data <- read_csv(paste0(path, i), 
                    skip = 17, 
                    n_max = 1060)
+  
   data <- mutate(data, sample_nr = str_extract(i, pattern = "Sample\\d+"))
+  
   all_data <- rbind(all_data, data)
 }
-head(all_data)
+```
+
+```{r, echo=FALSE}
+knitr::kable(
+  all_data[1:8, ],
+  caption = "Note the extra column with the well information"
+)
 ```
 
 It would be even more convenient if the sample_nr column only contained, well ... , numbers. 
-Again `str_extract` can help use remove all the unwanted symbols. Even though we are only left we numbers, we still need to convert it to a numeric, because a string will stay a string until told otherwise. 
+Again `str_extract` can help use remove all the unwanted symbols. Even though we are only left with numbers, we still need to convert it to a numeric, because a string will stay a string until told otherwise. 
 
 ```{r}
 all_data <- all_data %>%
   mutate(sample_nr = as.numeric(str_extract(sample_nr, pattern = "\\d+$")))
-head(all_data)
 ```
 
-Now it is also easy to add additional information about each sample. You could simply prepare a table in excel that contains at least a sample_nr column, and any number of additional columns with extra information. 
+```{r, echo=FALSE}
+knitr::kable(
+  all_data[1:8, ],
+  caption = "Almost there"
+)
+```
+
+## Adding sample information
+
+Now it is also easy to add additional information about each sample. You can simply prepare a small table in excel that contains at least a sample_nr column, and any number of additional columns with extra information about each sample. 
 
 ```{r, message=FALSE}
 exp_design <- read_delim("20210106_exp_design.csv", delim = ";")
-head(exp_design)
+```
+
+```{r, echo=FALSE}
+knitr::kable(
+  exp_design[1:6, ],
+  caption = "Example of a small experimental design table"
+)
 ```
 
 Finally we can join these two tables together based on the sample_nr column. 
@@ -124,16 +178,24 @@ Finally we can join these two tables together based on the sample_nr column.
 ```{r}
 all_data <- all_data %>%
   left_join(exp_design, by = "sample_nr")
-head(all_data)
 ```
 
-At this point you could save the final table if you want to make plots in other software.
+```{r, echo=FALSE}
+knitr::kable(
+  all_data[1:8, ],
+  caption = "The final table"
+)
+```
+
+## Saving and/or plotting
+
+At this point you could save the final table if you want to do further analysis in other software.
 
 ```{r, eval=FALSE}
 write_csv(all_data, "bioanalyzer_data.csv")
 ```
 
-Or you can make plots in r. 
+Or you can make plots in r!
 
 ```{r}
 library(ggpubr)
