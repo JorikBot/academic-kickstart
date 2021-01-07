@@ -8,6 +8,7 @@ categories:
 tags:
   - r
   - Tidyverse
+  - bioanalyzer
 subtitle: ''
 summary: ''
 authors: []
@@ -24,7 +25,7 @@ projects: []
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-The default plots made by the bioanalyzer are, in my opinion, not amazing. For one, the lines are really thin. Furthermore, sometimes to compare different samples, it would be nice to draw two traces is the same plot. Luckily, the bioanalyzer software also lets you export the raw data. This short post will show how to quickly get bioanalyzer trace data into R and ready for plotting. 
+The default plots made by the bioanalyzer are, in my opinion, not amazing. For one, the lines are really thin. Furthermore, it would be nice to draw two traces is the same plot, to compare different samples. Luckily, the bioanalyzer software lets you export the raw data. This short post will show how to quickly get bioanalyzer trace data into R and ready for plotting. 
 
 On the way we will make use of the tidyverse packages.
 
@@ -32,7 +33,7 @@ On the way we will make use of the tidyverse packages.
 library(tidyverse)
 ```
 
-## Importing one file into r
+## Importing one file into R
 
 You can get the raw data out of the bioanalyzer by going File > Export. Somewhat depending on the options you select next, it will spit out many different files:
 
@@ -40,11 +41,11 @@ You can get the raw data out of the bioanalyzer by going File > Export. Somewhat
 list.files(path = "./20210106data")
 ```
 
-Annoyingly, the raw data for each well of the bioanalyzer chip is found in a separate csv file. Manually pasting these together in excel is too much clicking, and more importantly error prone. Depending on your location, excel may see the comma as the thousand separator, which makes converting the csv file into excel columns with Data > Text to Columns go wrong for some rows (specifically those with a round number for time and high fluorescence, like 40,123). Importing the csv files into r will not run into this problem. 
+Annoyingly, the raw data for each well of the bioanalyzer chip is found in a separate csv file. Manually pasting these together in excel is too much clicking, and more importantly error prone. Depending on your location, excel may see the comma as the thousand separator, which makes converting the csv file into excel columns with Data > Text to Columns go wrong for some rows (specifically those with a round number for time and high fluorescence, like 40,123). Importing the csv files into R will not run into this problem. 
 
-I generally start out by creating an r project in the folder containing the bioanalyzer data. Among other things, this avoids having to set the working directory. 
+I generally start out by creating an R project in the folder containing the bioanalyzer data. Among other things, this avoids having to set the working directory. 
 
-The next step is to separate the csv files containing the raw data from the rest. Luckily, they always end in "Sample" + the well number + ".csv" (at least for RNA nano and pico chips). We can use this pattern to isolate them, by creating a regular expression and feeding this pattern to `list.files()`. We are not interested in what comes before Sample, so we can preface Sample with the * symbol. This means zero or more of anything can occur. Sample is always followed by one or more digits. We tell the function to look for a digit using \\\\d and + to allow for one or more them. Finally, all these files should end in .csv. The dollar sign signifies that the string should end there. 
+The next step is to separate the csv files containing the raw data from the rest. Luckily, they always end in "Sample" + the well number + ".csv" (at least for RNA nano and pico chips). We can use this pattern to isolate them, by creating a regular expression and feeding this pattern to `list.files()`. We are not interested in what comes before Sample, so we can preface Sample with the * symbol. This means zero or more of anything can occur. Sample is always followed by one or more digits. We tell the function to look for a digit using \\\\d and use + to allow for one or more them. Finally, all these files should end in .csv. The dollar sign signifies that the string should end there. 
 
 ```{r}
 # Ignore the path = , this is only here because of how the website is structured. 
@@ -123,15 +124,19 @@ sample2 <- read_csv(paste0(path, samples[3]),
 Instead, we can use a single `for` loop to import all the data files. In this loop we also save them into one big data table. We will use `mutate` to make a new column that contains the well number each measurement originates from. `str_extract` is used to extract this information from the file name. 
 
 ```{r, message=FALSE}
+# Create an empty table to save the data in.
 all_data <- tibble()
 
 for(i in samples){
+  # Import one by one
   data <- read_csv(paste0(path, i), 
                    skip = 17, 
                    n_max = 1060)
   
+  # Add the well number information
   data <- mutate(data, sample_nr = str_extract(i, pattern = "Sample\\d+"))
   
+  # Store in the big table
   all_data <- rbind(all_data, data)
 }
 ```
@@ -202,11 +207,11 @@ library(ggpubr)
 library(ggsci)
 
 all_data %>%
-  ggplot(aes(x = Time, y = Value, color = as.character(sample_nr)))+
+  ggplot(aes(x = Time, y = Value, color = as.factor(replicate)))+
     geom_line()+
     facet_grid(cols = vars(treatment))+
     scale_x_continuous(breaks = c(20, 40, 60))+
-    scale_color_jco(name = "Chip well")+
+    scale_color_jco(name = "Replicate")+
     theme_pubr()+
     labs(x = "Time in seconds",
          y = "Fluorescence (a.u.)")

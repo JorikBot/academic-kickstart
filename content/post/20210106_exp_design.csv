@@ -1,7 +1,7 @@
-sample_nr;treatment
-1;CTRL
-2;CTRL
-3;CTRL
-4;treatment
-5;treatment
-6;treatment
+sample_nr;treatment;replicate
+1;CTRL;1
+2;CTRL;2
+3;CTRL;3
+4;treatment;1
+5;treatment;2
+6;treatment;3
